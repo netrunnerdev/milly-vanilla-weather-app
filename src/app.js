@@ -177,19 +177,17 @@ function suggestCities(event) {
   let datalist = document.querySelector("#city-suggestions");
 
   if (query.length > 0) {
-    // We swapped this to Open-Meteo because it sorts by population (famous cities first!)
-    // It requires no API key.
     let apiUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
 
     axios.get(apiUrl).then(function (response) {
       datalist.innerHTML = "";
 
-      // Check if the API found any matching cities
       if (response.data.results) {
         response.data.results.forEach(function (city) {
           let option = document.createElement("option");
           
-          // This will format it nicely, like "Dublin, Ireland" or "Dubai, United Arab Emirates"
+          // CHANGED: We now use city.country_code instead of city.country
+          // This will display as "Dublin, IE" instead of "Dublin, Ireland"
           option.value = `${city.name}, ${city.country_code}`;
           
           datalist.appendChild(option);
@@ -200,7 +198,6 @@ function suggestCities(event) {
     datalist.innerHTML = "";
   }
 }
-
 // Listen for every time the user types a letter in the search bar
 let cityInput = document.querySelector("#city-input");
 cityInput.addEventListener("input", suggestCities);

@@ -170,3 +170,42 @@ let celsiusLink = document.querySelector("#celsius-link");
 celsiusLink.addEventListener("click", displayCelsiusTemperature);
 
 search("Dublin City");
+
+// Function to fetch and display city suggestions
+function suggestCities(event) {
+  let query = event.target.value;
+  let datalist = document.querySelector("#city-suggestions");
+
+  // Only start searching after the user has typed at least 3 letters
+  if (query.length > 2) {
+    let apiKey = "ac8bbf0f4d38b464214ca76d1f3d79a4";
+    // This is OpenWeatherMap's Geocoding API that searches for city names
+    let apiUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${apiKey}`;
+
+    axios.get(apiUrl).then(function (response) {
+      // Clear out the old suggestions
+      datalist.innerHTML = "";
+
+      // Add the new suggestions from the API
+      response.data.forEach(function (city) {
+        let option = document.createElement("option");
+        
+        // If the city has a state (like in the US), include it. Otherwise, just City and Country.
+        if (city.state) {
+            option.value = `${city.name}, ${city.state}, ${city.country}`;
+        } else {
+            option.value = `${city.name}, ${city.country}`;
+        }
+        
+        datalist.appendChild(option);
+      });
+    });
+  } else {
+    // If there are less than 3 letters, empty the list
+    datalist.innerHTML = "";
+  }
+}
+
+// Listen for every time the user types a letter in the search bar
+let cityInput = document.querySelector("#city-input");
+cityInput.addEventListener("input", suggestCities);

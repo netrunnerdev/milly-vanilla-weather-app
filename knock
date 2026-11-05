@@ -1,11 +1,1 @@
-SELECT 
-    country_code,
-    item_id
-FROM 
-    tnscdm_test.dm_mt_vid_issue_di_test
-WHERE 
-    date = max_pt('tnscdm_test.dm_mt_vid_issue_di_test') --20211102
-    AND (policy_category_0) = 'Adult nudity and sexual activities'
-    AND is_appeal = 0
-    AND country_code = 'US'
-    AND country_code IS NOT NULL
+

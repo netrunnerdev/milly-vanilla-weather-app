@@ -1,3 +1,31 @@
+function formatLocalTime(timezoneOffset) {
+  let now = new Date();
+  let utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
+  let cityTime = new Date(utcTime + timezoneOffset * 1000);
+
+  let days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ];
+  let day = days[cityTime.getDay()];
+  let hours = cityTime.getHours();
+  let minutes = cityTime.getMinutes();
+
+  if (hours < 10) {
+    hours = `0${hours}`;
+  }
+  if (minutes < 10) {
+    minutes = `0${minutes}`;
+  }
+
+  return `${day} ${hours}:${minutes}`;
+}
+
 function formatDate(timestamp) {
   let date = new Date(timestamp);
   let hours = date.getHours();
@@ -32,36 +60,35 @@ function formatDay(timestamp) {
 
 function displayForecast(response) {
   let forecast = response.data.daily;
-
   let forecastElement = document.querySelector("#forecast");
-
   let forecastHTML = `<div class="row">`;
+  
   forecast.forEach(function (forecastDay, index) {
     if (index < 6) {
       forecastHTML =
         forecastHTML +
         `
-                        <div class="col-2">
-                            <div class="weather-forecast-date">${formatDay(
-                              forecastDay.dt
-                            )}</div>
-
-                            <img src="https://openweathermap.org/img/wn/${
-                              forecastDay.weather[0].icon
-                            }@2x.png" 
-                            alt="" width="42" />
-                            <div class="weather-forecast-temperatures">
-                                <span class="weather-forecast-temperature-max"> ${Math.round(
-                                  forecastDay.temp.max
-                                )}° </span>
-                                <span class="weather-forecast-temperature-min"> ${Math.round(
-                                  forecastDay.temp.min
-                                )}° </span>
-                            </div>
-                        </div>
-                    `;
+          <div class="col-2">
+              <div class="weather-forecast-date">${formatDay(
+                forecastDay.dt
+              )}</div>
+              <img src="https://openweathermap.org/img/wn/${
+                forecastDay.weather[0].icon
+              }@2x.png" 
+              alt="" width="42" />
+              <div class="weather-forecast-temperatures">
+                  <span class="weather-forecast-temperature-max"> ${Math.round(
+                    forecastDay.temp.max
+                  )}° </span>
+                  <span class="weather-forecast-temperature-min"> ${Math.round(
+                    forecastDay.temp.min
+                  )}° </span>
+              </div>
+          </div>
+        `;
     }
   });
+  
   forecastHTML = forecastHTML + `</div>`;
   forecastElement.innerHTML = forecastHTML;
 }
@@ -81,6 +108,7 @@ function displayTemperature(response) {
   let windElement = document.querySelector("#wind");
   let dateElement = document.querySelector("#date");
   let iconElement = document.querySelector("#icon");
+  let localTimeElement = document.querySelector("#local-time");
 
   celsiusTemperature = response.data.main.temp;
 
@@ -90,6 +118,8 @@ function displayTemperature(response) {
   humidityElement.innerHTML = response.data.main.humidity;
   windElement.innerHTML = Math.round(response.data.wind.speed);
   dateElement.innerHTML = formatDate(response.data.dt * 1000);
+  localTimeElement.innerHTML = formatLocalTime(response.data.timezone);
+  
   iconElement.setAttribute(
     "src",
     `https://openweathermap.org/img/wn/${response.data.weather[0].icon}@2x.png`
@@ -101,8 +131,7 @@ function displayTemperature(response) {
 
 function search(city) {
   let apiKey = "ac8bbf0f4d38b464214ca76d1f3d79a4";
-  let apiUrl = `https://api.openweathermap.org/data/2.5/weather?
-q=${city}&appid=${apiKey}&units=metric`;
+  let apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
   axios.get(apiUrl).then(displayTemperature);
 }
 
@@ -125,6 +154,8 @@ function displayCelsiusTemperature(event) {
   event.preventDefault();
   let temperatureElement = document.querySelector("#temperature");
   temperatureElement.innerHTML = Math.round(celsiusTemperature);
+  celsiusLink.classList.add("active");
+  farenheitLink.classList.remove("active");
 }
 
 let celsiusTemperature = null;

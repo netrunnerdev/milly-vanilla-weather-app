@@ -92,3 +92,8 @@ li {
 .weather-forecast-temperatures {
   font-size: 13px;
 }
+
+#time-sentence {
+  font-size: 18px;
+  font-weight: bold;
+}

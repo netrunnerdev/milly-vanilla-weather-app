@@ -177,7 +177,7 @@ function suggestCities(event) {
   let datalist = document.querySelector("#city-suggestions");
 
   // Only start searching after the user has typed at least 3 letters
-  if (query.length > 2) {
+  if (query.length > 0) {
     let apiKey = "ac8bbf0f4d38b464214ca76d1f3d79a4";
     // This is OpenWeatherMap's Geocoding API that searches for city names
     let apiUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${apiKey}`;

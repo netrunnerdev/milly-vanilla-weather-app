@@ -173,35 +173,30 @@ search("Dublin City");
 
 // Function to fetch and display city suggestions
 function suggestCities(event) {
-  let query = event.target.value;
+  let query = event.target.value.trim();
   let datalist = document.querySelector("#city-suggestions");
 
-  // Only start searching after the user has typed at least 3 letters
   if (query.length > 0) {
-    let apiKey = "ac8bbf0f4d38b464214ca76d1f3d79a4";
-    // This is OpenWeatherMap's Geocoding API that searches for city names
-    let apiUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${apiKey}`;
+    // We swapped this to Open-Meteo because it sorts by population (famous cities first!)
+    // It requires no API key.
+    let apiUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
 
     axios.get(apiUrl).then(function (response) {
-      // Clear out the old suggestions
       datalist.innerHTML = "";
 
-      // Add the new suggestions from the API
-      response.data.forEach(function (city) {
-        let option = document.createElement("option");
-        
-        // If the city has a state (like in the US), include it. Otherwise, just City and Country.
-        if (city.state) {
-            option.value = `${city.name}, ${city.state}, ${city.country}`;
-        } else {
-            option.value = `${city.name}, ${city.country}`;
-        }
-        
-        datalist.appendChild(option);
-      });
+      // Check if the API found any matching cities
+      if (response.data.results) {
+        response.data.results.forEach(function (city) {
+          let option = document.createElement("option");
+          
+          // This will format it nicely, like "Dublin, Ireland" or "Dubai, United Arab Emirates"
+          option.value = `${city.name}, ${city.country}`;
+          
+          datalist.appendChild(option);
+        });
+      }
     });
   } else {
-    // If there are less than 3 letters, empty the list
     datalist.innerHTML = "";
   }
 }

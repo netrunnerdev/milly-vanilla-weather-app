@@ -190,7 +190,7 @@ function suggestCities(event) {
           let option = document.createElement("option");
           
           // This will format it nicely, like "Dublin, Ireland" or "Dubai, United Arab Emirates"
-          option.value = `${city.name}, ${city.country}`;
+          option.value = `${city.name}, ${city.country_code}`;
           
           datalist.appendChild(option);
         });

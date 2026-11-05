@@ -85,6 +85,10 @@ li {
   opacity: 0.5;
 }
 
+#local-time {
+  font-size: 18px;
+  font-weight: bold;
+}
 .weather-forecast-temperatures {
   font-size: 13px;
 }

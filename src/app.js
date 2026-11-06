@@ -1,17 +1,11 @@
+// --- TIME & DATE FORMATTING ---
+
 function formatLocalTime(timezoneOffset) {
   let now = new Date();
   let utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
   let cityTime = new Date(utcTime + timezoneOffset * 1000);
 
-  let days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-  ];
+  let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let day = days[cityTime.getDay()];
   let hours = cityTime.getHours();
   let minutes = cityTime.getMinutes();
@@ -37,15 +31,7 @@ function formatDate(timestamp) {
     minutes = `0${minutes}`;
   }
 
-  let days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
+  let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let day = days[date.getDay()];
   return `${day} ${hours}:${minutes}`;
 }
@@ -56,6 +42,23 @@ function formatDay(timestamp) {
   let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return days[day];
+}
+
+// --- EMOJI FORECAST LOGIC ---
+
+function getWeatherEmoji(iconCode) {
+  let emojiMapping = {
+    "01d": "☀️", "01n": "🌙",
+    "02d": "⛅", "02n": "⛅",
+    "03d": "☁️", "03n": "☁️",
+    "04d": "☁️", "04n": "☁️",
+    "09d": "🌧️", "09n": "🌧️",
+    "10d": "🌦️", "10n": "🌦️",
+    "11d": "⛈️", "11n": "⛈️",
+    "13d": "❄️", "13n": "❄️",
+    "50d": "🌫️", "50n": "🌫️"
+  };
+  return emojiMapping[iconCode] || "🌤️";
 }
 
 function displayForecast(response) {
@@ -69,20 +72,16 @@ function displayForecast(response) {
         forecastHTML +
         `
           <div class="col-2">
-              <div class="weather-forecast-date">${formatDay(
-                forecastDay.dt
-              )}</div>
-              <img src="https://openweathermap.org/img/wn/${
-                forecastDay.weather[0].icon
-              }@2x.png" 
-              alt="" width="42" />
+              <div class="weather-forecast-date">${formatDay(forecastDay.dt)}</div>
+              
+              <!-- Changed to use the Emoji function instead of the small image -->
+              <div style="font-size: 35px; margin: 10px 0;">
+                ${getWeatherEmoji(forecastDay.weather[0].icon)}
+              </div>
+              
               <div class="weather-forecast-temperatures">
-                  <span class="weather-forecast-temperature-max"> ${Math.round(
-                    forecastDay.temp.max
-                  )}° </span>
-                  <span class="weather-forecast-temperature-min"> ${Math.round(
-                    forecastDay.temp.min
-                  )}° </span>
+                  <span class="weather-forecast-temperature-max"> ${Math.round(forecastDay.temp.max)}° </span>
+                  <span class="weather-forecast-temperature-min"> ${Math.round(forecastDay.temp.min)}° </span>
               </div>
           </div>
         `;
@@ -99,6 +98,8 @@ function getForecast(coordinates) {
   let apiUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${coordinates.lat}&lon=${coordinates.lon}&appid=${apiKey}&units=metric`;
   axios.get(apiUrl).then(displayForecast);
 }
+
+// --- MAIN WEATHER LOGIC ---
 
 function displayTemperature(response) {
   let temperatureElement = document.querySelector("#temperature");
@@ -125,6 +126,11 @@ function displayTemperature(response) {
     `https://openweathermap.org/img/wn/${response.data.weather[0].icon}@2x.png`
   );
   iconElement.setAttribute("alt", response.data.weather[0].description);
+
+  // TRIGGER THE NEWS FEED FOR THE SEARCHED COUNTRY
+  if (response.data.sys && response.data.sys.country) {
+      getCountryNews(response.data.sys.country);
+  }
 
   getForecast(response.data.coord);
 }
@@ -171,7 +177,8 @@ celsiusLink.addEventListener("click", displayCelsiusTemperature);
 
 search("Dublin City");
 
-// Function to fetch and display city suggestions
+// --- SEARCH SUGGESTIONS ---
+
 function suggestCities(event) {
   let query = event.target.value.trim();
   let datalist = document.querySelector("#city-suggestions");
@@ -185,11 +192,7 @@ function suggestCities(event) {
       if (response.data.results) {
         response.data.results.forEach(function (city) {
           let option = document.createElement("option");
-          
-          // CHANGED: We now use city.country_code instead of city.country
-          // This will display as "Dublin, IE" instead of "Dublin, Ireland"
           option.value = `${city.name}, ${city.country_code}`;
-          
           datalist.appendChild(option);
         });
       }
@@ -198,15 +201,45 @@ function suggestCities(event) {
     datalist.innerHTML = "";
   }
 }
-// Listen for every time the user types a letter in the search bar
+
 let cityInput = document.querySelector("#city-input");
 cityInput.addEventListener("input", suggestCities);
 
 // --- RADIO STATION LOGIC ---
+
 let stationSelect = document.querySelector("#station-select");
 let audioPlayer = document.querySelector("#audio-player");
 
 stationSelect.addEventListener("change", function (event) {
   audioPlayer.src = event.target.value;
-  audioPlayer.play(); // Auto-plays when they change the station
+  audioPlayer.play();
 });
+
+// --- GLOBAL NEWS FEED LOGIC ---
+
+function getCountryNews(countryCode) {
+  let newsElement = document.querySelector("#news-list");
+  newsElement.innerHTML = "<li style='font-size: 14px;'>Loading latest headlines...</li>";
+
+  let rssUrl = `https://news.google.com/rss/headlines/section/geo/${countryCode}`;
+  let apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+
+  axios.get(apiUrl).then(function (response) {
+    let newsHTML = "";
+    let articles = response.data.items.slice(0, 3);
+
+    articles.forEach(function (article) {
+      newsHTML += `
+        <li style="margin-bottom: 12px; font-size: 14px; text-align: left; line-height: 1.4;">
+            <a href="${article.link}" target="_blank" style="color: #212529; text-decoration: none; font-weight: 500;">
+                🔹 ${article.title}
+            </a>
+        </li>
+      `;
+    });
+
+    newsElement.innerHTML = newsHTML;
+  }).catch(function() {
+      newsElement.innerHTML = "<li style='font-size: 14px;'>News currently unavailable for this region.</li>";
+  });
+}

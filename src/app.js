@@ -201,3 +201,12 @@ function suggestCities(event) {
 // Listen for every time the user types a letter in the search bar
 let cityInput = document.querySelector("#city-input");
 cityInput.addEventListener("input", suggestCities);
+
+// --- RADIO STATION LOGIC ---
+let stationSelect = document.querySelector("#station-select");
+let audioPlayer = document.querySelector("#audio-player");
+
+stationSelect.addEventListener("change", function (event) {
+  audioPlayer.src = event.target.value;
+  audioPlayer.play(); // Auto-plays when they change the station
+});

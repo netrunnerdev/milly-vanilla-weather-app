@@ -220,41 +220,40 @@ stationSelect.addEventListener("change", function (event) {
 });
 
 // --- WORLD NEWS FEED LOGIC ---
+// --- WORLD NEWS FEED LOGIC ---
 function getWorldNews() {
   let newsElement = document.querySelector("#news-list");
   
-  // Forced color to black directly in the HTML to override your CSS
+  // Forced color to black directly in the HTML
   newsElement.innerHTML = "<li style='font-size: 14px; color: #000000; font-weight: bold;'>Loading world news...</li>";
 
-  // CHANGED: We now use BBC World News instead of Google, because it never crashes!
-  let rssUrl = "http://feeds.bbci.co.uk/news/world/rss.xml";
-  let proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+  // 1. Using the secure HTTPS version of BBC World News
+  let rssUrl = "https://feeds.bbci.co.uk/news/world/rss.xml";
+  
+  // 2. Using rss2json which is much more stable than the XML proxy we tried
+  let apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
-  axios.get(proxyUrl).then(function (response) {
-    let parser = new DOMParser();
-    let xmlDoc = parser.parseFromString(response.data.contents, "text/xml");
-    let items = xmlDoc.querySelectorAll("item");
-    let newsHTML = "";
-    
-    // Grab the top 3 global articles
-    for (let i = 0; i < 3 && i < items.length; i++) {
-      let title = items[i].querySelector("title").textContent;
-      let link = items[i].querySelector("link").textContent;
+  axios.get(apiUrl).then(function (response) {
+    // Check if the data successfully loaded
+    if (response.data.status === "ok") {
+      let newsHTML = "";
       
-      // We added color: #000000; (black) to make sure it always shows up against light backgrounds!
-      newsHTML += `
-        <li style="margin-bottom: 12px; font-size: 14px; text-align: left; line-height: 1.4; color: #000000;">
-            <a href="${link}" target="_blank" style="color: #000000; text-decoration: none; font-weight: bold;">
-                🔹 ${title}
-            </a>
-        </li>
-      `;
-    }
-
-    if (newsHTML === "") {
-        newsElement.innerHTML = "<li style='font-size: 14px; color: #000000; font-weight: bold;'>No trending news found.</li>";
+      // Grab the top 3 global articles
+      let articles = response.data.items.slice(0, 3);
+      
+      articles.forEach(function (article) {
+        newsHTML += `
+          <li style="margin-bottom: 12px; font-size: 14px; text-align: left; line-height: 1.4;">
+              <a href="${article.link}" target="_blank" style="color: #000000; text-decoration: none; font-weight: bold;">
+                  🔹 ${article.title}
+              </a>
+          </li>
+        `;
+      });
+      
+      newsElement.innerHTML = newsHTML;
     } else {
-        newsElement.innerHTML = newsHTML;
+        newsElement.innerHTML = "<li style='font-size: 14px; color: #000000; font-weight: bold;'>News currently unavailable.</li>";
     }
   }).catch(function() {
       newsElement.innerHTML = "<li style='font-size: 14px; color: #000000; font-weight: bold;'>News currently unavailable.</li>";

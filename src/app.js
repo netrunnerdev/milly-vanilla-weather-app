@@ -216,30 +216,47 @@ stationSelect.addEventListener("change", function (event) {
 });
 
 // --- GLOBAL NEWS FEED LOGIC ---
-
+// --- GLOBAL NEWS FEED LOGIC (UPDATED & FIXED) ---
 function getCountryNews(countryCode) {
   let newsElement = document.querySelector("#news-list");
   newsElement.innerHTML = "<li style='font-size: 14px;'>Loading latest headlines...</li>";
 
+  // 1. The official Google News RSS link
   let rssUrl = `https://news.google.com/rss/headlines/section/geo/${countryCode}`;
-  let apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+  
+  // 2. We use AllOrigins to bypass web browser security blocks (CORS)
+  let proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
 
-  axios.get(apiUrl).then(function (response) {
+  axios.get(proxyUrl).then(function (response) {
+    // 3. Translate the raw XML data from Google into something JavaScript can read
+    let parser = new DOMParser();
+    let xmlDoc = parser.parseFromString(response.data.contents, "text/xml");
+    
+    // 4. Find all the news articles ("items")
+    let items = xmlDoc.querySelectorAll("item");
     let newsHTML = "";
-    let articles = response.data.items.slice(0, 3);
-
-    articles.forEach(function (article) {
+    
+    // 5. Loop through just the first 3 articles
+    for (let i = 0; i < 3 && i < items.length; i++) {
+      let title = items[i].querySelector("title").textContent;
+      let link = items[i].querySelector("link").textContent;
+      
       newsHTML += `
         <li style="margin-bottom: 12px; font-size: 14px; text-align: left; line-height: 1.4;">
-            <a href="${article.link}" target="_blank" style="color: #212529; text-decoration: none; font-weight: 500;">
-                🔹 ${article.title}
+            <a href="${link}" target="_blank" style="color: #212529; text-decoration: none; font-weight: 500;">
+                🔹 ${title}
             </a>
         </li>
       `;
-    });
+    }
 
-    newsElement.innerHTML = newsHTML;
+    // 6. Display the news, or a backup message if the country has no news
+    if (newsHTML === "") {
+        newsElement.innerHTML = "<li style='font-size: 14px;'>No trending news found for this region.</li>";
+    } else {
+        newsElement.innerHTML = newsHTML;
+    }
   }).catch(function() {
-      newsElement.innerHTML = "<li style='font-size: 14px;'>News currently unavailable for this region.</li>";
+      newsElement.innerHTML = "<li style='font-size: 14px;'>News currently unavailable.</li>";
   });
 }

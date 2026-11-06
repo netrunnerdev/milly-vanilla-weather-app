@@ -1,5 +1,9 @@
-// --- TIME & DATE FORMATTING ---
+// --- GLOBAL VARIABLES ---
+let celsiusTemperature = null;
+let currentCityTimezoneOffset = null;
+let timeInterval = null;
 
+// --- TIME & DATE FORMATTING ---
 function formatLocalTime(timezoneOffset) {
   let now = new Date();
   let utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -9,6 +13,7 @@ function formatLocalTime(timezoneOffset) {
   let day = days[cityTime.getDay()];
   let hours = cityTime.getHours();
   let minutes = cityTime.getMinutes();
+  let seconds = cityTime.getSeconds(); // Added seconds so you can watch it tick!
 
   if (hours < 10) {
     hours = `0${hours}`;
@@ -16,8 +21,11 @@ function formatLocalTime(timezoneOffset) {
   if (minutes < 10) {
     minutes = `0${minutes}`;
   }
+  if (seconds < 10) {
+    seconds = `0${seconds}`;
+  }
 
-  return `${day} ${hours}:${minutes}`;
+  return `${day} ${hours}:${minutes}:${seconds}`;
 }
 
 function formatDate(timestamp) {
@@ -45,7 +53,6 @@ function formatDay(timestamp) {
 }
 
 // --- EMOJI FORECAST LOGIC ---
-
 function getWeatherEmoji(iconCode) {
   let emojiMapping = {
     "01d": "☀️", "01n": "🌙",
@@ -68,17 +75,12 @@ function displayForecast(response) {
   
   forecast.forEach(function (forecastDay, index) {
     if (index < 6) {
-      forecastHTML =
-        forecastHTML +
-        `
+      forecastHTML += `
           <div class="col-2">
               <div class="weather-forecast-date">${formatDay(forecastDay.dt)}</div>
-              
-              <!-- Changed to use the Emoji function instead of the small image -->
               <div style="font-size: 35px; margin: 10px 0;">
                 ${getWeatherEmoji(forecastDay.weather[0].icon)}
               </div>
-              
               <div class="weather-forecast-temperatures">
                   <span class="weather-forecast-temperature-max"> ${Math.round(forecastDay.temp.max)}° </span>
                   <span class="weather-forecast-temperature-min"> ${Math.round(forecastDay.temp.min)}° </span>
@@ -88,19 +90,17 @@ function displayForecast(response) {
     }
   });
   
-  forecastHTML = forecastHTML + `</div>`;
+  forecastHTML += `</div>`;
   forecastElement.innerHTML = forecastHTML;
 }
 
 function getForecast(coordinates) {
-  console.log(coordinates);
   let apiKey = "ac8bbf0f4d38b464214ca76d1f3d79a4";
   let apiUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${coordinates.lat}&lon=${coordinates.lon}&appid=${apiKey}&units=metric`;
   axios.get(apiUrl).then(displayForecast);
 }
 
-// --- MAIN WEATHER LOGIC ---
-
+// --- MAIN WEATHER LOGIC & CONTINUOUS CLOCK ---
 function displayTemperature(response) {
   let temperatureElement = document.querySelector("#temperature");
   let cityElement = document.querySelector("#city");
@@ -112,6 +112,7 @@ function displayTemperature(response) {
   let localTimeElement = document.querySelector("#local-time");
 
   celsiusTemperature = response.data.main.temp;
+  currentCityTimezoneOffset = response.data.timezone;
 
   temperatureElement.innerHTML = Math.round(response.data.main.temp);
   cityElement.innerHTML = response.data.name;
@@ -119,7 +120,17 @@ function displayTemperature(response) {
   humidityElement.innerHTML = response.data.main.humidity;
   windElement.innerHTML = Math.round(response.data.wind.speed);
   dateElement.innerHTML = formatDate(response.data.dt * 1000);
-  localTimeElement.innerHTML = formatLocalTime(response.data.timezone);
+  
+  // Set the time immediately
+  localTimeElement.innerHTML = formatLocalTime(currentCityTimezoneOffset);
+
+  // Clear old clock timer, start a new one ticking every second
+  if (timeInterval) {
+    clearInterval(timeInterval);
+  }
+  timeInterval = setInterval(function () {
+    localTimeElement.innerHTML = formatLocalTime(currentCityTimezoneOffset);
+  }, 1000);
   
   iconElement.setAttribute(
     "src",
@@ -127,11 +138,9 @@ function displayTemperature(response) {
   );
   iconElement.setAttribute("alt", response.data.weather[0].description);
 
-  // TRIGGER THE NEWS FEED FOR THE SEARCHED COUNTRY
-  if (response.data.sys && response.data.sys.country) {
-      getCountryNews(response.data.sys.country);
-  }
-
+  // Trigger the City News Feed
+  getCityNews(response.data.name);
+  // Trigger the Forecast
   getForecast(response.data.coord);
 }
 
@@ -164,8 +173,6 @@ function displayCelsiusTemperature(event) {
   farenheitLink.classList.remove("active");
 }
 
-let celsiusTemperature = null;
-
 let form = document.querySelector("#search-form");
 form.addEventListener("submit", handleSubmit);
 
@@ -177,8 +184,7 @@ celsiusLink.addEventListener("click", displayCelsiusTemperature);
 
 search("Dublin City");
 
-// --- SEARCH SUGGESTIONS ---
-
+// --- SEARCH SUGGESTIONS (OPEN-METEO) ---
 function suggestCities(event) {
   let query = event.target.value.trim();
   let datalist = document.querySelector("#city-suggestions");
@@ -188,7 +194,6 @@ function suggestCities(event) {
 
     axios.get(apiUrl).then(function (response) {
       datalist.innerHTML = "";
-
       if (response.data.results) {
         response.data.results.forEach(function (city) {
           let option = document.createElement("option");
@@ -206,7 +211,6 @@ let cityInput = document.querySelector("#city-input");
 cityInput.addEventListener("input", suggestCities);
 
 // --- RADIO STATION LOGIC ---
-
 let stationSelect = document.querySelector("#station-select");
 let audioPlayer = document.querySelector("#audio-player");
 
@@ -216,27 +220,20 @@ stationSelect.addEventListener("change", function (event) {
 });
 
 // --- GLOBAL NEWS FEED LOGIC ---
-// --- GLOBAL NEWS FEED LOGIC (UPDATED & FIXED) ---
-function getCountryNews(countryCode) {
+function getCityNews(cityName) {
   let newsElement = document.querySelector("#news-list");
   newsElement.innerHTML = "<li style='font-size: 14px;'>Loading latest headlines...</li>";
 
-  // 1. The official Google News RSS link
-  let rssUrl = `https://news.google.com/rss/headlines/section/geo/${countryCode}`;
-  
-  // 2. We use AllOrigins to bypass web browser security blocks (CORS)
+  // Google News Search -> AllOrigins Proxy
+  let rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(cityName + " news")}`;
   let proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
 
   axios.get(proxyUrl).then(function (response) {
-    // 3. Translate the raw XML data from Google into something JavaScript can read
     let parser = new DOMParser();
     let xmlDoc = parser.parseFromString(response.data.contents, "text/xml");
-    
-    // 4. Find all the news articles ("items")
     let items = xmlDoc.querySelectorAll("item");
     let newsHTML = "";
     
-    // 5. Loop through just the first 3 articles
     for (let i = 0; i < 3 && i < items.length; i++) {
       let title = items[i].querySelector("title").textContent;
       let link = items[i].querySelector("link").textContent;
@@ -250,9 +247,8 @@ function getCountryNews(countryCode) {
       `;
     }
 
-    // 6. Display the news, or a backup message if the country has no news
     if (newsHTML === "") {
-        newsElement.innerHTML = "<li style='font-size: 14px;'>No trending news found for this region.</li>";
+        newsElement.innerHTML = "<li style='font-size: 14px;'>No trending news found for this city.</li>";
     } else {
         newsElement.innerHTML = newsHTML;
     }

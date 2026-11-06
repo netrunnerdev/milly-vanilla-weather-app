@@ -62,6 +62,18 @@
                 </div>
                 <div class="weather-forecast" id="forecast">
                 </div>
+                <!-- NEW WEATHER RADIO SECTION -->
+<div class="weather-radio mt-4 p-3 text-center" style="background: #f8f9fa; border-radius: 15px;">
+    <h5>📻 Weather Radio</h5>
+    <select id="station-select" class="form-control mb-3">
+        <option value="https://play.streamafrica.net/lofi">Chill Lo-Fi Beats</option>
+        <option value="https://media-ssl.musicradio.com/CapitalUK">Capital FM (Pop)</option>
+        <option value="https://live.mpr.org/mprcmp3">Classical Music</option>
+    </select>
+    <audio id="audio-player" controls style="width: 100%; height: 35px;">
+        <source src="https://play.streamafrica.net/lofi" type="audio/mpeg">
+    </audio>
+</div>
                 <small>
                     <a href="https://github.com/kettama/milly-vanilla-weather-app" target="_blank">Open-source code</a>
                     by Milena Obilinovic

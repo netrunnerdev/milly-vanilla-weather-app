@@ -62,16 +62,29 @@
                 <!-- 6-Day Emoji Forecast -->
                 <div class="weather-forecast" id="forecast">
                 </div>
-
-            <!-- NEW RELIABLE RADIO SECTION -->
+<!-- GLOBAL & CHILEAN RADIO SECTION -->
 <div class="weather-radio mt-4 p-3 text-center" style="background: #f8f9fa; border-radius: 15px;">
     <h5>📻 Weather Radio</h5>
     <select id="station-select" class="form-control mb-3">
+        <!-- Global Stations -->
         <option value="https://lofi.stream.laut.fm/lofi">Chill Lo-Fi Beats</option>
         <option value="https://listen.181fm.com/181-power_128k.mp3">Global Pop Hits</option>
-        <option value="https://stream.wqxr.org/wqxr">New York Classical (WQXR)</option>]
+        <option value="https://stream.wqxr.org/wqxr">New York Classical (WQXR)</option>
+        
+        <!-- Regional Antofagasta Stations (Unlocked) -->
         <option value="https://us9.maindigitalstream.com/ssl/7389">Radio Sol 97.7 (Antofagasta)</option>
-  
+        <option value="https://streaming.proyectos.cl:8040/stream">Radio Madero (Antofagasta)</option>
+        <option value="https://streaming.proyectos.cl:8050/stream">Radio Universidad (Antofagasta)</option>
+        
+        <!-- National News Network -->
+        <option value="https://unlimited3-cl.dps.live/biobiosantiago/mp3/icecast.audio">Radio Bío Bío (Santiago)</option>
+    </select>
+    
+    <audio id="audio-player" controls style="width: 100%; height: 35px;">
+        <!-- Default starting station needs to match the first option -->
+        <source src="https://lofi.stream.laut.fm/lofi" type="audio/mpeg">
+    </audio>
+</div>
 
                 <!-- NEW: City News Feed -->
         <!-- NEW: World News Feed -->
